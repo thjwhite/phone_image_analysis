@@ -4,6 +4,8 @@ import sys
 import json
 
 GOOGLE_SEARCH_URL='https://www.googleapis.com/customsearch/v1'
+DEBUG=False
+WRITE_RESPONSE=True
 
 def main():
     custom_search_engine_id = os.environ.get('GOOGLE_API_CX')
@@ -19,9 +21,23 @@ def main():
     params['q'] = 'iphone'
     params['imgType'] = 'photo'
 
-    print('hello world')
-    response = requests.get(GOOGLE_SEARCH_URL, params=params)
-    print(response)
+    if DEBUG:
+        with open('.sample_google_output') as f:
+            payload = json.load(f)
+    else:
+        response = requests.get(GOOGLE_SEARCH_URL, params=params)
+        print(response)
+        payload = response.json()
+        if WRITE_RESPONSE:
+            with open('.sample_google_output', 'w+') as f:
+                json.dump(payload, f)
+    
+    for search_item in payload['items']:
+        print('=================================')
+        print(search_item['link'])
+        # todo - null check
+        print([img['url'] for img in search_item['pagemap']['imageobject']])
+        
     
 
 if __name__ == "__main__":
