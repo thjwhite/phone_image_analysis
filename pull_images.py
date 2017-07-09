@@ -5,6 +5,7 @@ import json
 import uuid
 import hashlib
 import time
+import traceback
 from urllib.parse import urlparse
 
 GOOGLE_SEARCH_URL='https://www.googleapis.com/customsearch/v1'
@@ -68,14 +69,19 @@ def process_payload(payload):
             continue
         
         for url in urls:
-            url = urlparse(url, scheme='http').geturl()
-            img_resp = requests.get(url)
-            content = img_resp.content
-            h = hashlib.sha256(content).hexdigest()
-            u = str(uuid.uuid4())
-            with open('%s/%s' % (IMAGE_REPO_DIR, u), 'wb') as f:
-                f.write(img_resp.content)
-            print('wrote uuid=%s sha256=%s' % (u, h))
+            try:
+                print(url)
+                url = urlparse(url, scheme='http').geturl()
+                img_resp = requests.get(url)
+                content = img_resp.content
+                h = hashlib.sha256(content).hexdigest()
+                u = str(uuid.uuid4())
+                with open('%s/%s' % (IMAGE_REPO_DIR, u), 'wb') as f:
+                    f.write(img_resp.content)
+                print('wrote uuid=%s sha256=%s' % (u, h))
+            except Exception as e:
+                print('ERROR')
+                print(traceback.format_exc())
         print()
 
 
@@ -84,19 +90,22 @@ def main():
     if custom_search_engine_id is None or google_api_key is None:
         print('please provide CSE ID and API Key via environment variables (GOOGLE_API_CX and GOOGLE_API_KEY)')
         sys.exit(1)
+    start = 1
+    while True:
+        payload = execute_request(custom_search_engine_id, google_api_key, start=start)
 
-    payload = execute_request(custom_search_engine_id, google_api_key)
+        if not os.path.exists(GOOGLE_API_OUTPUT_DIR):
+            os.makedirs(GOOGLE_API_OUTPUT_DIR)
+        if not os.path.exists(IMAGE_REPO_DIR):
+            os.makedirs(IMAGE_REPO_DIR)
+        t_process = time.time()
+        print('%s\n' % t_process)
+        with open ('%s/%s' % (GOOGLE_API_OUTPUT_DIR, t_process), 'w') as f:
+            json.dump(payload, f)
 
-    if not os.path.exists(GOOGLE_API_OUTPUT_DIR):
-        os.makedirs(GOOGLE_API_OUTPUT_DIR)
-    if not os.path.exists(IMAGE_REPO_DIR):
-        os.makedirs(IMAGE_REPO_DIR)
-    t_process = time.time()
-    print('%s\n' % t_process)
-    with open ('%s/%s' % (GOOGLE_API_OUTPUT_DIR, t_process), 'w') as f:
-        json.dump(payload, f)
+        process_payload(payload)
 
-    process_payload(payload)
+        start = payload['queries']['nextPage'][0]['startIndex']
 
 
 if __name__ == "__main__":
