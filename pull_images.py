@@ -6,6 +6,7 @@ import uuid
 import hashlib
 import time
 import traceback
+import lmdb
 from urllib.parse import urlparse
 
 GOOGLE_SEARCH_URL='https://www.googleapis.com/customsearch/v1'
@@ -15,6 +16,8 @@ WRITE_RESPONSE=False
 DEBUG_SAMPLE_GOOGLE_API_OUTPUT_DIR='.sample_google_output'
 GOOGLE_API_OUTPUT_DIR='.google_api_queries'
 IMAGE_REPO_DIR='.images'
+
+LMDB_FILE='.registrar'
 
 
 def grab_auth():
@@ -70,17 +73,26 @@ def get_urls(payload):
     return urls
 
 
-def write_new(url, content, h):
+def write_new(url, content, h, lmdb_env):
     """
     writes out a new image
     """
-    u = str(uuid.uuid4())
+    u = uuid.uuid4()
     with open('%s/%s' % (IMAGE_REPO_DIR, u), 'wb') as f:
         f.write(content)
-    print('wrote url=%s\n      uuid=%s\n      sha256=%s\n' % (url, u, h))
+    print('wrote url=%s\n      uuid=%s\n      sha256=%s\n' % (url, str(u), h.hexdigest()))
+    with lmdb_env.begin(write=True) as txn:
+        # map our hash value to the image uuid
+        txn.put(h.digest(), u.bytesq)
 
 
-def process_urls(urls):
+def dedup(h, lmdb_env):
+    with lmdb_env.begin() as txn:
+        image_uuid = txn.get(h.digest())
+        return image_uuid is not None
+
+
+def process_urls(urls, lmdb_env):
     for (url, thumb) in urls:
         try:
             url = urlparse(url, scheme='http').geturl()
@@ -94,8 +106,11 @@ def process_urls(urls):
         except:
             print('ERROR')
             print(traceback.format_exc())
-        h = hashlib.sha256(content).hexdigest()
-        write_new(url, content, h)
+        h = hashlib.sha256(content)
+        if not dedup(h, lmdb_env):
+            write_new(url, content, h, lmdb_env)
+        else:
+            print('Duplicate image detected')
 
 
 def main():
@@ -107,6 +122,9 @@ def main():
         os.makedirs(GOOGLE_API_OUTPUT_DIR)
     if not os.path.exists(IMAGE_REPO_DIR):
         os.makedirs(IMAGE_REPO_DIR)
+
+    lmdb_env = lmdb.open(LMDB_FILE, max_dbs=1, map_size=(1000 * 1000 * 1000))
+
     start = 1
     while True:
         payload = execute_request(custom_search_engine_id, google_api_key, start=start)
@@ -117,7 +135,7 @@ def main():
 
         # process_payload(payload)
         urls = get_urls(payload)
-        process_urls(urls)
+        process_urls(urls, lmdb_env)
 
         start = payload['queries']['nextPage'][0]['startIndex']
 
