@@ -1,3 +1,7 @@
+"""
+# todo - make multiple queries to get around 10 page limit (iphone 6 vs iphone 7)
+# todo - pylint
+"""
 import requests
 import os
 import sys
@@ -53,6 +57,10 @@ def execute_request(custom_search_engine_id, google_api_key, start=1):
         params = generate_iphone_search_params(custom_search_engine_id, google_api_key, start)
         response = requests.get(GOOGLE_SEARCH_URL, params=params)
         print(response)
+        if response.status_code != 200:
+            print(params)
+            print(response.content)
+            raise ValueError('could not successfully query google')
         payload = response.json()
         if WRITE_RESPONSE:
             with open(DEBUG_SAMPLE_GOOGLE_API_OUTPUT_DIR, 'w+') as f:
