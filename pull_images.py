@@ -1,6 +1,3 @@
-"""
-# todo - make multiple queries to get around 10 page limit (iphone 6 vs iphone 7)
-"""
 import os
 import sys
 import json
