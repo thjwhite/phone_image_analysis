@@ -3,6 +3,7 @@ import cv2
 
 IOS_READY = '.images/ios_ready'
 ANDROID_READY = '.images/android_ready'
+NON_PHONE_READY = '.images/non_ready'
 
 def process(classification, identifier):
     img = cv2.imread('.images/%s/%s' % (classification, identifier))
@@ -21,6 +22,8 @@ def main():
         os.makedirs(IOS_READY)
     if not os.path.exists(ANDROID_READY):
         os.makedirs(ANDROID_READY)
+    if not os.path.exists(NON_PHONE_READY):
+        os.makedirs(NON_PHONE_READY)
 
     print('PROCESSING IOS IMAGES')
     images = os.listdir('.images/ios')
@@ -33,6 +36,13 @@ def main():
     for i, android_image in enumerate(images):
         print('%s -- %d%%' % (android_image, 100 * i / len(images)))
         process('android', android_image)
+
+    print('PROCESSING NON PHONE IMAGES')
+    images = os.listdir('.images/non')
+    for i, non_phone_image in enumerate(images):
+        print('%s -- %d%%' % (non_phone_image, 100 * i / len(images)))
+        process('non', non_phone_image)
+
 
 if __name__ == "__main__":
     main()

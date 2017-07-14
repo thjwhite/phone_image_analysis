@@ -18,9 +18,10 @@ IMAGE_REPO_DIR = '.images'
 LMDB_FILE = '.registrar'
 IOS_CLASS = 'ios'
 ANDROID_CLASS = 'android'
-IOS_SEARCH_TERMS = ['iphone', 'iphone 7', 'iphone 6', 'ios screenshot', 'ipad']
-ANDROID_SEARCH_TERMS = ['android phone', 'android screenshot',
-                        'samsung galaxy', 'google pixel', 'android tablet']
+NON_PHONE_CLASS = 'non'
+IOS_SEARCH_TERMS = ['iphone', 'iphone 7', 'iphone 6']
+ANDROID_SEARCH_TERMS = ['android phone', 'samsung galaxy', 'google pixel']
+NON_PHONE_SEARCH_TERMS = ['bird', 'train', 'pen', 'pizza']
 
 
 def grab_auth():
@@ -160,6 +161,8 @@ def main():
         os.makedirs('%s/%s' % (IMAGE_REPO_DIR, IOS_CLASS))
     if not os.path.exists('%s/%s' % (IMAGE_REPO_DIR, ANDROID_CLASS)):
         os.makedirs('%s/%s' % (IMAGE_REPO_DIR, ANDROID_CLASS))
+    if not os.path.exists('%s/%s' % (IMAGE_REPO_DIR, NON_PHONE_CLASS)):
+        os.makedirs('%s/%s' % (IMAGE_REPO_DIR, NON_PHONE_CLASS))
 
     lmdb_env = lmdb.open(LMDB_FILE, max_dbs=1, map_size=(1000 * 1000 * 1000))
 
@@ -168,6 +171,10 @@ def main():
 
     for term in ANDROID_SEARCH_TERMS:
         process_term(term, ANDROID_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
+
+    for term in NON_PHONE_SEARCH_TERMS:
+        process_term(term, NON_PHONE_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
+
 
 if __name__ == "__main__":
     main()
