@@ -5,6 +5,7 @@ import uuid
 import hashlib
 import time
 import traceback
+import argparse
 
 from urllib.parse import urlparse
 
@@ -22,6 +23,7 @@ NON_PHONE_CLASS = 'non'
 IOS_SEARCH_TERMS = ['iphone', 'iphone 7', 'iphone 6']
 ANDROID_SEARCH_TERMS = ['android phone', 'samsung galaxy', 'google pixel']
 NON_PHONE_SEARCH_TERMS = ['bird', 'train', 'pen', 'pizza']
+NON_PHONE_SEARCH_TERMS_2 = ['cat', 'statue', 'art', 'mountain', 'car', 'bread', 'water', 'metal', 'crowd']
 
 
 def grab_auth():
@@ -147,6 +149,11 @@ def main():
     main entry point into the program,
     drives the process of going to google, downloading the images, etc.
     """
+    parser = argparse.ArgumentParser(description='pull down some images')
+    parser.add_argument('--second', dest='second', action='store_true',
+                        help='whether to pull down the second set of terms or the first')
+    args = parser.parse_args()
+
     custom_search_engine_id, google_api_key = grab_auth()
     if custom_search_engine_id is None or google_api_key is None:
         print('please provide CSE ID and API Key via ' +
@@ -166,14 +173,18 @@ def main():
 
     lmdb_env = lmdb.open(LMDB_FILE, max_dbs=1, map_size=(1000 * 1000 * 1000))
 
-    for term in IOS_SEARCH_TERMS:
-        process_term(term, IOS_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
+    if not args.second:
+        for term in IOS_SEARCH_TERMS:
+            process_term(term, IOS_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
 
-    for term in ANDROID_SEARCH_TERMS:
-        process_term(term, ANDROID_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
+        for term in ANDROID_SEARCH_TERMS:
+            process_term(term, ANDROID_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
 
-    for term in NON_PHONE_SEARCH_TERMS:
-        process_term(term, NON_PHONE_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
+        for term in NON_PHONE_SEARCH_TERMS:
+            process_term(term, NON_PHONE_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
+    else:
+        for term in NON_PHONE_SEARCH_TERMS_2:
+            process_term(term, NON_PHONE_CLASS, custom_search_engine_id, google_api_key, lmdb_env)
 
 
 if __name__ == "__main__":

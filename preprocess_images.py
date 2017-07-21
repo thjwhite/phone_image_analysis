@@ -12,10 +12,10 @@ def process(classification, identifier):
         return
     resized = cv2.resize(img, (128, 128), interpolation=cv2.INTER_AREA)
     grayscaled = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite('.images/%s_ready/%s.png' % (classification, identifier), grayscaled)
-    os.rename('.images/%s_ready/%s.png' % (classification, identifier),
-              '.images/%s_ready/%s' % (classification, identifier))
-
+    for rot_degree in [0, 90, 180, 270]:
+        rot_matrix = cv2.getRotationMatrix2D((64, 64), rot_degree, 1)
+        rotated = cv2.warpAffine(grayscaled, rot_matrix, (128, 128))
+        cv2.imwrite('.images/%s_ready/%s_rot%s.png' % (classification, identifier, rot_degree), rotated)
 
 def main():
     if not os.path.exists(IOS_READY):
